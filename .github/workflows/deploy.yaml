@@ -37,9 +37,10 @@ jobs:
         export KUBECONFIG=$PWD/kubeconfig
 
     - name: Replace placeholders in YAML files
-      run:  sed -i "s|__REPONAME__|${REPO_NAME}|g; s|__REPODOCKER__|${DOCKER_REPOSITORY}|g; s|__IMAGETAG__|${IMAGE_TAG}|g" k8s/app-deployment.yaml
-            sed -i "s|__REPONAME__|${REPO_NAME}|g" k8s/app-service.yaml
-            sed -i "s|__REPONAME__|${REPO_NAME}|g" k8s/app-configmap.yaml
+      run: |
+        sed -i "s|__REPONAME__|${REPO_NAME}|g; s|__REPODOCKER__|${DOCKER_REPOSITORY}|g; s|__IMAGETAG__|${IMAGE_TAG}|g" k8s/app-deployment.yaml
+        sed -i "s|__REPONAME__|${REPO_NAME}|g" k8s/app-service.yaml
+        sed -i "s|__REPONAME__|${REPO_NAME}|g" k8s/app-configmap.yaml
 
     - name: Deploy to RKE
       run: |
