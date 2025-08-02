@@ -1,0 +1,50 @@
+name: Deploy Application HeyPico
+
+on:
+  push:
+    branches: [ main ]
+
+env:
+  REPO_NAME: ${{ github.event.repository.name }}
+  IMAGE_TAG: ${{ github.run_number}}
+  DOCKER_REPOSITORY: ${{ secrets.DOCKER_USERNAME }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Login
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Build and Push
+      uses: docker/build-push-action@v3
+      with:
+        push: true
+        tags: |
+          ${{ env.DOCKER_REPOSITORY }}/${{ env.REPO_NAME }}:${{ env.IMAGE_TAG }}
+
+    - name: Set up Kubeconfig
+      run: |
+        echo "${{ secrets.KUBECONFIG_DATA }}" | base64 -d > kubeconfig
+        chmod 600 kubeconfig
+        export KUBECONFIG=$PWD/kubeconfig
+
+    - name: Replace placeholders in deployment.yaml
+      run: sed -i "s|__REPONAME__|${REPO_NAME}|g; s|__REPODOCKER__|${DOCKER_REPOSITORY}|g; s|__IMAGETAG__|${IMAGE_TAG}|g" k8s/app-deployment.yaml
+           sed -i "s|__REPONAME__|${REPO_NAME}|g" k8s/app-service.yaml
+           sed -i "s|__REPONAME__|${REPO_NAME}|g" k8s/app-configmap.yaml
+
+    - name: Deploy to RKE
+      run: |
+        export KUBECONFIG=$PWD/kubeconfig
+
+        kubectl apply -f app-configmap.yaml
+        kubectl apply -f app-service.yaml
+        kubectl apply -f app-deployment.yaml

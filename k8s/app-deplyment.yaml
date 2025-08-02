@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: __REPONAME__-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: __REPONAME__
+  template:
+    metadata:
+      labels:
+        app: __REPONAME__
+    spec:
+      containers:
+        - name: __REPONAME__
+          image: __REPODOCKER__/__REPONAME__:__IMAGETAG__
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: __REPONAME__-configmap
